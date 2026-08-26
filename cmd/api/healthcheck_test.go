@@ -1,10 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 )
 
@@ -23,7 +24,32 @@ func TestHealthCheckHandler(t *testing.T) {
 		t.Errorf("status = %d, want = %d", rr.Code, http.StatusOK)
 	}
 
-	if !strings.Contains(rr.Body.String(), "environment: testing") {
-		t.Errorf("body missing environment, got: %s", rr.Body.String())
+	gotContentType := rr.Header().Get("Content-Type")
+	wantContentType := "application/json"
+
+	if gotContentType != wantContentType {
+		t.Errorf("want content type: %s; got content type:%s\n", wantContentType, gotContentType)
+	}
+
+	bodyBytes := rr.Body.Bytes()
+	var actual HealthCheckResponse
+
+	err := json.Unmarshal(bodyBytes, &actual)
+	if err != nil {
+		t.Fatalf("could not unmarshal json response body: %v", err)
+	}
+
+	fmt.Printf("%v", actual)
+
+	if actual.Environment != app.config.env {
+		t.Errorf("want environment: %q; got: %q", app.config.env, actual.Environment)
+	}
+
+	if actual.Status != "available" {
+		t.Errorf("want status: %q; got: %q", "available", actual.Status)
+	}
+
+	if actual.Version != version {
+		t.Errorf("want version: %q; got: %q", version, actual.Version)
 	}
 }
