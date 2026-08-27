@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
 )
 
@@ -14,8 +14,21 @@ type HealthCheckResponse struct {
 func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	js := `{"status": "available", "environment": %q, "version": %q}`
-	js = fmt.Sprintf(js, app.config.env, version)
+	data := HealthCheckResponse{
+		Status:      "available",
+		Environment: app.config.env,
+		Version:     version,
+	}
 
-	w.Write([]byte(js))
+	json, err := json.Marshal(data)
+	// add an extra line for nice looking response via curl
+	json = append(json, '\n')
+
+	if err != nil {
+		app.logger.Error(err.Error())
+		http.Error(w, "The server encountered an error and could not process your request", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(json)
 }
