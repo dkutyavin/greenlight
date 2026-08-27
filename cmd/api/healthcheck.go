@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
@@ -20,15 +19,11 @@ func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Reques
 		Version:     version,
 	}
 
-	json, err := json.Marshal(data)
-	// add an extra line for nice looking response via curl
-	json = append(json, '\n')
-
+	err := writeJSON(w, data, http.StatusOK)
 	if err != nil {
 		app.logger.Error(err.Error())
 		http.Error(w, "The server encountered an error and could not process your request", http.StatusInternalServerError)
 		return
 	}
 
-	w.Write(json)
 }

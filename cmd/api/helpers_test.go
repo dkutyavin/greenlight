@@ -12,6 +12,8 @@ import (
 )
 
 func TestReadIDParam(t *testing.T) {
+	t.Parallel()
+
 	cases := []struct {
 		name    string
 		id      string
@@ -65,4 +67,36 @@ func TestReadIDParam(t *testing.T) {
 		})
 	}
 
+}
+
+func TestWriteJson(t *testing.T) {
+	t.Parallel()
+
+	data := struct {
+		Field1 string `json:"field1"`
+		Field2 int    `json:"field2"`
+	}{
+		Field1: "value",
+		Field2: 200,
+	}
+
+	want := `{"field1":"value","field2":200}` + "\n"
+	wantContentType := "application/json"
+
+	rr := httptest.NewRecorder()
+
+	err := writeJSON(rr, data, http.StatusOK)
+	if err != nil {
+		t.Fatalf("unexpected writeJSON error: %v", err)
+	}
+
+	gotContentType := rr.Header().Get("Content-Type")
+
+	if gotContentType != wantContentType {
+		t.Errorf("want content type: %q; got: %q", wantContentType, gotContentType)
+	}
+
+	if rr.Body.String() != want {
+		t.Errorf("want json: %q; got: %q", want, rr.Body.String())
+	}
 }
