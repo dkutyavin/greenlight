@@ -72,31 +72,46 @@ func TestReadIDParam(t *testing.T) {
 func TestWriteJson(t *testing.T) {
 	t.Parallel()
 
-	data := struct {
-		Field1 string `json:"field1"`
-		Field2 int    `json:"field2"`
+	cases := []struct {
+		name   string
+		data   map[string]any
+		want   string
+		status int
 	}{
-		Field1: "value",
-		Field2: 200,
+		{
+			name: "valid json",
+			data: map[string]any{
+				"field1": "value",
+				"field2": 200,
+			},
+			want:   `{"field1":"value","field2":200}`,
+			status: http.StatusOK,
+		},
 	}
 
-	want := `{"field1":"value","field2":200}` + "\n"
 	wantContentType := "application/json"
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.want = tt.want + "\n"
 
-	rr := httptest.NewRecorder()
+			rr := httptest.NewRecorder()
 
-	err := writeJSON(rr, data, http.StatusOK)
-	if err != nil {
-		t.Fatalf("unexpected writeJSON error: %v", err)
+			err := writeJSON(rr, tt.data, http.StatusOK)
+			if err != nil {
+				t.Fatalf("unexpected writeJSON error: %v", err)
+			}
+
+			gotContentType := rr.Header().Get("Content-Type")
+
+			if gotContentType != wantContentType {
+				t.Errorf("want content type: %q; got: %q", wantContentType, gotContentType)
+			}
+
+			if rr.Body.String() != tt.want {
+				t.Errorf("want json: %q; got: %q", tt.want, rr.Body.String())
+			}
+
+		})
 	}
 
-	gotContentType := rr.Header().Get("Content-Type")
-
-	if gotContentType != wantContentType {
-		t.Errorf("want content type: %q; got: %q", wantContentType, gotContentType)
-	}
-
-	if rr.Body.String() != want {
-		t.Errorf("want json: %q; got: %q", want, rr.Body.String())
-	}
 }
