@@ -73,19 +73,35 @@ func TestWriteJson(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		name   string
-		data   map[string]any
-		want   string
-		status int
+		name       string
+		data       any
+		status     int
+		want       string
+		wantStatus int
 	}{
 		{
-			name: "valid json",
+			name:       "string value",
+			data:       "value",
+			status:     http.StatusOK,
+			want:       "\"value\"",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "map value",
 			data: map[string]any{
 				"field1": "value",
 				"field2": 200,
 			},
-			want:   `{"field1":"value","field2":200}`,
-			status: http.StatusOK,
+			status:     http.StatusOK,
+			want:       `{"field1":"value","field2":200}`,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "status 500",
+			data:       "value",
+			status:     http.StatusBadRequest,
+			want:       "\"value\"",
+			wantStatus: http.StatusOK,
 		},
 	}
 
@@ -101,14 +117,20 @@ func TestWriteJson(t *testing.T) {
 				t.Fatalf("unexpected writeJSON error: %v", err)
 			}
 
+			gotStatus := rr.Result().StatusCode
 			gotContentType := rr.Header().Get("Content-Type")
+			gotBody := rr.Body.String()
 
 			if gotContentType != wantContentType {
 				t.Errorf("want content type: %q; got: %q", wantContentType, gotContentType)
 			}
 
-			if rr.Body.String() != tt.want {
-				t.Errorf("want json: %q; got: %q", tt.want, rr.Body.String())
+			if gotStatus != tt.wantStatus {
+				t.Errorf("want status: %v; got: %v", tt.wantStatus, gotStatus)
+			}
+
+			if gotBody != tt.want {
+				t.Errorf("want json: %q; got: %q", tt.want, gotBody)
 			}
 
 		})
