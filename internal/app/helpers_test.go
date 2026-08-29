@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
-	"greenlight.dekutyavin.net/internal/data"
 )
 
 func TestReadIDParam(t *testing.T) {
@@ -74,12 +72,7 @@ func TestReadIDParam(t *testing.T) {
 func TestWriteJson(t *testing.T) {
 	t.Parallel()
 
-	app := Application{
-		Logger: slog.New(slog.DiscardHandler),
-		Config: data.Config{
-			Env: "testing",
-		},
-	}
+	app := newTestApplication(t)
 
 	cases := []struct {
 		name       string

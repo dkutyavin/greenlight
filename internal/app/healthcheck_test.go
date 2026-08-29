@@ -3,7 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
+
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,10 +12,7 @@ import (
 )
 
 func TestHealthCheckHandler(t *testing.T) {
-	app := Application{
-		Config: data.Config{Env: "testing"},
-		Logger: slog.New(slog.DiscardHandler),
-	}
+	app := newTestApplication(t)
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
