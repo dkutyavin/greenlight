@@ -7,6 +7,6 @@ import (
 )
 
 type Application struct {
-	Config  data.Config
-	Logger  *slog.Logger
+	Config data.Config
+	Logger *slog.Logger
 }

@@ -2,8 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"fmt"
-
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,6 +11,11 @@ import (
 
 func TestHealthCheckHandler(t *testing.T) {
 	app := newTestApplication(t)
+	testConfig := data.Config{
+		Env:     "testing",
+		Version: "1.0.0",
+	}
+	app.Config = testConfig
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
@@ -27,28 +30,30 @@ func TestHealthCheckHandler(t *testing.T) {
 	wantContentType := "application/json"
 
 	if gotContentType != wantContentType {
-		t.Errorf("want content type: %s; got content type:%s\n", wantContentType, gotContentType)
+		t.Errorf("want content type: %q; got content type:%q\n", wantContentType, gotContentType)
 	}
 
 	bodyBytes := rr.Body.Bytes()
-	var actual data.HealthCheckResponse
+	var actual struct {
+		Status      string `json:"status"`
+		Environment string `json:"environment"`
+		Version     string `json:"version"`
+	}
 
 	err := json.Unmarshal(bodyBytes, &actual)
 	if err != nil {
 		t.Fatalf("could not unmarshal json response body: %v", err)
 	}
 
-	fmt.Printf("%v", actual)
-
-	if actual.Environment != app.Config.Env {
-		t.Errorf("want environment: %q; got: %q", app.Config.Env, actual.Environment)
+	if actual.Environment != testConfig.Env {
+		t.Errorf("want environment: %q; got: %q", testConfig.Env, actual.Environment)
 	}
 
 	if actual.Status != "available" {
 		t.Errorf("want status: %q; got: %q", "available", actual.Status)
 	}
 
-	if actual.Version != app.Config.Version {
-		t.Errorf("want version: %q; got: %q", app.Config.Version, actual.Version)
+	if actual.Version != testConfig.Version {
+		t.Errorf("want version: %q; got: %q", testConfig.Version, actual.Version)
 	}
 }
