@@ -5,16 +5,11 @@ import (
 
 	"greenlight.dekutyavin.net/internal/data"
 )
-type HealthCheckResponse struct {
-	Status      string `json:"status"`
-	Environment string `json:"environment"`
-	Version     string `json:"version"`
-}
 
 func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	data := HealthCheckResponse{
+	data := data.HealthCheckResponse{
 		Status:      "available",
 		Environment: app.config.Env,
 		Version:     version,

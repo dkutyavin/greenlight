@@ -34,7 +34,7 @@ func TestHealthCheckHandler(t *testing.T) {
 	}
 
 	bodyBytes := rr.Body.Bytes()
-	var actual HealthCheckResponse
+	var actual data.HealthCheckResponse
 
 	err := json.Unmarshal(bodyBytes, &actual)
 	if err != nil {
