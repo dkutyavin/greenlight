@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
+	"greenlight.dekutyavin.net/internal/data"
 )
 
 func TestReadIDParam(t *testing.T) {
@@ -75,6 +76,9 @@ func TestWriteJson(t *testing.T) {
 
 	app := application{
 		logger: slog.New(slog.DiscardHandler),
+		config: data.Config{
+			Env: "testing",
+		},
 	}
 
 	cases := []struct {
