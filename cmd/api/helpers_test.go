@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -72,6 +73,10 @@ func TestReadIDParam(t *testing.T) {
 func TestWriteJson(t *testing.T) {
 	t.Parallel()
 
+	app := application{
+		logger: slog.New(slog.DiscardHandler),
+	}
+
 	cases := []struct {
 		name       string
 		data       any
@@ -112,7 +117,7 @@ func TestWriteJson(t *testing.T) {
 
 			rr := httptest.NewRecorder()
 
-			err := writeJSON(rr, tt.data, http.StatusOK)
+			err := app.writeJSON(rr, tt.data, http.StatusOK)
 			if err != nil {
 				t.Fatalf("unexpected writeJSON error: %v", err)
 			}
