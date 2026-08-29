@@ -6,12 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"greenlight.dekutyavin.net/internal/data"
+	"greenlight.dekutyavin.net/internal/config"
 )
 
 func TestHealthCheckHandler(t *testing.T) {
 	app := newTestApplication(t)
-	testConfig := data.Config{
+	testConfig := config.Config{
 		Env:     "testing",
 		Version: "1.0.0",
 	}

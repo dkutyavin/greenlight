@@ -3,10 +3,10 @@ package app
 import (
 	"log/slog"
 
-	"greenlight.dekutyavin.net/internal/data"
+	"greenlight.dekutyavin.net/internal/config"
 )
 
 type Application struct {
-	Config data.Config
+	Config config.Config
 	Logger *slog.Logger
 }

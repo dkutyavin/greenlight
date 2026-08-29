@@ -4,14 +4,14 @@ import (
 	"log/slog"
 	"testing"
 
-	"greenlight.dekutyavin.net/internal/data"
+	"greenlight.dekutyavin.net/internal/config"
 )
 
 func newTestApplication(t *testing.T) *Application {
 	t.Helper()
 
 	return &Application{
-		Config: data.Config{
+		Config: config.Config{
 			Env: "testing",
 		},
 		Logger: slog.New(slog.DiscardHandler),

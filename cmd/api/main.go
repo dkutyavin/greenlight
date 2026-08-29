@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"greenlight.dekutyavin.net/internal/app"
-	"greenlight.dekutyavin.net/internal/data"
+	"greenlight.dekutyavin.net/internal/config"
 )
 
 const version = "1.0.0"
 
 func main() {
-	var cfg data.Config
+	var cfg config.Config
 
 	flag.IntVar(&cfg.Port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
