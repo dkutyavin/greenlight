@@ -7,25 +7,22 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"greenlight.dekutyavin.net/internal/data"
 )
 
 const version = "1.0.0"
 
-type config struct {
-	port int
-	env  string
-}
-
 type application struct {
-	config config
+	config data.Config
 	logger *slog.Logger
 }
 
 func main() {
-	var cfg config
+	var cfg data.Config
 
-	flag.IntVar(&cfg.port, "port", 4000, "API server port")
-	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
+	flag.IntVar(&cfg.Port, "port", 4000, "API server port")
+	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -36,7 +33,7 @@ func main() {
 	}
 
 	srv := http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.port),
+		Addr:         fmt.Sprintf(":%d", cfg.Port),
 		Handler:      app.routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
@@ -44,7 +41,7 @@ func main() {
 		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
 
-	logger.Info("starting server", "addr", srv.Addr, "env", cfg.env)
+	logger.Info("starting server", "addr", srv.Addr, "env", cfg.Env)
 	err := srv.ListenAndServe()
 	logger.Error(err.Error())
 	os.Exit(1)

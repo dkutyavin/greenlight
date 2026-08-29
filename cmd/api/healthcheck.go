@@ -2,8 +2,9 @@ package main
 
 import (
 	"net/http"
-)
 
+	"greenlight.dekutyavin.net/internal/data"
+)
 type HealthCheckResponse struct {
 	Status      string `json:"status"`
 	Environment string `json:"environment"`
@@ -15,7 +16,7 @@ func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Reques
 
 	data := HealthCheckResponse{
 		Status:      "available",
-		Environment: app.config.env,
+		Environment: app.config.Env,
 		Version:     version,
 	}
 

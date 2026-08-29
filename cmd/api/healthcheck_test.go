@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"greenlight.dekutyavin.net/internal/data"
 )
 
 func TestHealthCheckHandler(t *testing.T) {
 	app := application{
-		config: config{env: "testing"},
+		config: data.Config{Env: "testing"},
 		logger: slog.New(slog.DiscardHandler),
 	}
 
@@ -41,8 +43,8 @@ func TestHealthCheckHandler(t *testing.T) {
 
 	fmt.Printf("%v", actual)
 
-	if actual.Environment != app.config.env {
-		t.Errorf("want environment: %q; got: %q", app.config.env, actual.Environment)
+	if actual.Environment != app.config.Env {
+		t.Errorf("want environment: %q; got: %q", app.config.Env, actual.Environment)
 	}
 
 	if actual.Status != "available" {
