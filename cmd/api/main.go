@@ -8,15 +8,11 @@ import (
 	"os"
 	"time"
 
+	"greenlight.dekutyavin.net/internal/app"
 	"greenlight.dekutyavin.net/internal/data"
 )
 
 const version = "1.0.0"
-
-type application struct {
-	config data.Config
-	logger *slog.Logger
-}
 
 func main() {
 	var cfg data.Config
@@ -24,17 +20,18 @@ func main() {
 	flag.IntVar(&cfg.Port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
 	flag.Parse()
+	cfg.Version = version
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	app := application{
-		config: cfg,
-		logger: logger,
+	app := app.Application{
+		Config: cfg,
+		Logger: logger,
 	}
 
 	srv := http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
-		Handler:      app.routes(),
+		Handler:      app.Routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,

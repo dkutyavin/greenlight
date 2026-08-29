@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"net/http"
@@ -6,18 +6,18 @@ import (
 	"greenlight.dekutyavin.net/internal/data"
 )
 
-func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	data := data.HealthCheckResponse{
 		Status:      "available",
-		Environment: app.config.Env,
-		Version:     version,
+		Environment: app.Config.Env,
+		Version:     app.Config.Version,
 	}
 
 	err := app.writeJSON(w, data, http.StatusOK)
 	if err != nil {
-		app.logger.Error(err.Error())
+		app.Logger.Error(err.Error())
 		http.Error(w, "The server encountered an error and could not process your request", http.StatusInternalServerError)
 		return
 	}

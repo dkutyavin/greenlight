@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"fmt"
@@ -8,11 +8,11 @@ import (
 	"greenlight.dekutyavin.net/internal/data"
 )
 
-func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Create a new movie")
 }
 
-func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) showMovieHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := readIDParam(r)
 	if err != nil {
 		http.NotFound(w, r)
@@ -30,7 +30,7 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 
 	err = app.writeJSON(w, movie, http.StatusOK)
 	if err != nil {
-		app.logger.Error(err.Error())
+		app.Logger.Error(err.Error())
 		http.Error(w, "The server encoutered a problem and could not process your request", http.StatusInternalServerError)
 	}
 }

@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -74,9 +74,9 @@ func TestReadIDParam(t *testing.T) {
 func TestWriteJson(t *testing.T) {
 	t.Parallel()
 
-	app := application{
-		logger: slog.New(slog.DiscardHandler),
-		config: data.Config{
+	app := Application{
+		Logger: slog.New(slog.DiscardHandler),
+		Config: data.Config{
 			Env: "testing",
 		},
 	}

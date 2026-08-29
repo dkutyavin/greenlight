@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"encoding/json"
@@ -12,15 +12,15 @@ import (
 )
 
 func TestHealthCheckHandler(t *testing.T) {
-	app := application{
-		config: data.Config{Env: "testing"},
-		logger: slog.New(slog.DiscardHandler),
+	app := Application{
+		Config: data.Config{Env: "testing"},
+		Logger: slog.New(slog.DiscardHandler),
 	}
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
 
-	app.routes().ServeHTTP(rr, req)
+	app.Routes().ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
 		t.Errorf("status = %d, want = %d", rr.Code, http.StatusOK)
@@ -43,15 +43,15 @@ func TestHealthCheckHandler(t *testing.T) {
 
 	fmt.Printf("%v", actual)
 
-	if actual.Environment != app.config.Env {
-		t.Errorf("want environment: %q; got: %q", app.config.Env, actual.Environment)
+	if actual.Environment != app.Config.Env {
+		t.Errorf("want environment: %q; got: %q", app.Config.Env, actual.Environment)
 	}
 
 	if actual.Status != "available" {
 		t.Errorf("want status: %q; got: %q", "available", actual.Status)
 	}
 
-	if actual.Version != version {
-		t.Errorf("want version: %q; got: %q", version, actual.Version)
+	if actual.Version != app.Config.Version {
+		t.Errorf("want version: %q; got: %q", app.Config.Version, actual.Version)
 	}
 }
