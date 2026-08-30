@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"log/slog"
+	"net/http/httptest"
 	"testing"
 
 	"greenlight.dekutyavin.net/internal/config"
@@ -60,5 +61,24 @@ func assertLogError(t *testing.T, buf *bytes.Buffer, errMsg string, method strin
 
 	if entry.URI != uri {
 		t.Errorf("want URI: %q; got: %q", uri, entry.URI)
+	}
+}
+
+func assertErrorResponse(t *testing.T, rr *httptest.ResponseRecorder, wantStatusCode int, message any) {
+	t.Helper()
+
+	wantBody, err := json.Marshal(envelope{"error": message})
+	if err != nil {
+		t.Fatalf("could not marshal wantBody: %v", err)
+	}
+	wantBody = append(wantBody, '\n')
+
+	if rr.Result().StatusCode != wantStatusCode {
+		t.Errorf("want status: %d; got: %d", wantStatusCode, rr.Result().StatusCode)
+	}
+
+	gotBody := rr.Body.String()
+	if gotBody != string(wantBody) {
+		t.Errorf("want body: %q; got: %q", string(wantBody), gotBody)
 	}
 }
