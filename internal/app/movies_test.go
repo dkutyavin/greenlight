@@ -38,7 +38,7 @@ func TestShowMovieHandler(t *testing.T) {
 		Movie struct {
 			ID      int      `json:"id"`
 			Title   string   `json:"title"`
-			Runtime int      `json:"runtime"`
+			Runtime string   `json:"runtime"`
 			Genres  []string `json:"genres"`
 			Version int      `json:"version"`
 		} `json:"movie"`
@@ -57,8 +57,9 @@ func TestShowMovieHandler(t *testing.T) {
 		t.Errorf("want movie title: %q; got: %q", m.Title, resBody.Movie.Title)
 	}
 
-	if resBody.Movie.Runtime != m.Runtime {
-		t.Errorf("want runtime: %d; got: %d", m.Runtime, resBody.Movie.Runtime)
+	wantRuntime := fmt.Sprintf("%d mins", m.Runtime)
+	if resBody.Movie.Runtime != wantRuntime {
+		t.Errorf("want runtime: %q; got: %q", wantRuntime, resBody.Movie.Runtime)
 	}
 
 	if !slices.Equal(resBody.Movie.Genres, m.Genres) {
