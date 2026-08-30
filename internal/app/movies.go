@@ -15,7 +15,7 @@ func (app *Application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 func (app *Application) showMovieHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := readIDParam(r)
 	if err != nil {
-		http.NotFound(w, r)
+		app.notFoundResponse(w, r)
 		return
 	}
 

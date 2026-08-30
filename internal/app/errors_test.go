@@ -56,3 +56,20 @@ func TestServerErrorResponse(t *testing.T) {
 	assertLogError(t, buf, errMsg, method, uri)
 	assertErrorResponse(t, rr, wantStatusCode, message)
 }
+
+func TestNotFoundResponse(t *testing.T) {
+	t.Parallel()
+
+	method := http.MethodGet
+	uri := "/v1/any-path-will-do"
+
+	app := newTestApplication(t)
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(method, uri, nil)
+
+	wantStatusCode := http.StatusNotFound
+	message := "the requested resource could not be found"
+
+	app.notFoundResponse(rr, req)
+	assertErrorResponse(t, rr, wantStatusCode, message)
+}
