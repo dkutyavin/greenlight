@@ -76,18 +76,11 @@ func TestWriteJson(t *testing.T) {
 
 	cases := []struct {
 		name       string
-		data       any
+		data       envelope
 		status     int
 		want       string
 		wantStatus int
 	}{
-		{
-			name:       "string value",
-			data:       "value",
-			status:     http.StatusOK,
-			want:       "\"value\"",
-			wantStatus: http.StatusOK,
-		},
 		{
 			name: "map value",
 			data: map[string]any{
@@ -100,9 +93,9 @@ func TestWriteJson(t *testing.T) {
 		},
 		{
 			name:       "status 500",
-			data:       "value",
+			data:       map[string]any{"key": "value"},
 			status:     http.StatusBadRequest,
-			want:       "\"value\"",
+			want:       `{"key":"value"}`,
 			wantStatus: http.StatusOK,
 		},
 	}

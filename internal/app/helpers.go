@@ -9,6 +9,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+type envelope map[string]any
+
 var errInvalidIdParameter = errors.New("invalid id parameter")
 
 func readIDParam(r *http.Request) (int, error) {
@@ -21,7 +23,7 @@ func readIDParam(r *http.Request) (int, error) {
 	return id, nil
 }
 
-func (app *Application) writeJSON(w http.ResponseWriter, data any, status int) error {
+func (app *Application) writeJSON(w http.ResponseWriter, data envelope, status int) error {
 	json, err := json.Marshal(data)
 	if err != nil {
 		return err
