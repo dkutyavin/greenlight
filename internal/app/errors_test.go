@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -71,5 +72,22 @@ func TestNotFoundResponse(t *testing.T) {
 	message := "the requested resource could not be found"
 
 	app.notFoundResponse(rr, req)
+	assertErrorResponse(t, rr, wantStatusCode, message)
+}
+
+func TestMethodNotAllowedResponse(t *testing.T) {
+	t.Parallel()
+
+	method := http.MethodPost
+	uri := "/v1/any-path-will-do"
+
+	app := newTestApplication(t)
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(method, uri, nil)
+
+	wantStatusCode := http.StatusMethodNotAllowed
+	message := fmt.Sprintf("the %s method is not supported for this resourse", method)
+
+	app.methodNotAllowedResponse(rr, req)
 	assertErrorResponse(t, rr, wantStatusCode, message)
 }
