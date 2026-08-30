@@ -34,26 +34,28 @@ func TestHealthCheckHandler(t *testing.T) {
 	}
 
 	bodyBytes := rr.Body.Bytes()
-	var actual struct {
-		Status      string `json:"status"`
-		Environment string `json:"environment"`
-		Version     string `json:"version"`
+	var resBody struct {
+		Status     string `json:"status"`
+		SystemInfo struct {
+			Environment string `json:"environment"`
+			Version     string `json:"version"`
+		} `json:"system_info"`
 	}
 
-	err := json.Unmarshal(bodyBytes, &actual)
+	err := json.Unmarshal(bodyBytes, &resBody)
 	if err != nil {
 		t.Fatalf("could not unmarshal json response body: %v", err)
 	}
 
-	if actual.Environment != testConfig.Env {
-		t.Errorf("want environment: %q; got: %q", testConfig.Env, actual.Environment)
+	if resBody.SystemInfo.Environment != testConfig.Env {
+		t.Errorf("want environment: %q; got: %q", testConfig.Env, resBody.SystemInfo.Environment)
 	}
 
-	if actual.Status != "available" {
-		t.Errorf("want status: %q; got: %q", "available", actual.Status)
+	if resBody.Status != "available" {
+		t.Errorf("want status: %q; got: %q", "available", resBody.Status)
 	}
 
-	if actual.Version != testConfig.Version {
-		t.Errorf("want version: %q; got: %q", testConfig.Version, actual.Version)
+	if resBody.SystemInfo.Version != testConfig.Version {
+		t.Errorf("want version: %q; got: %q", testConfig.Version, resBody.SystemInfo.Version)
 	}
 }

@@ -7,10 +7,12 @@ import (
 func (app *Application) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	data := map[string]any{
-		"status":      "available",
-		"environment": app.Config.Env,
-		"version":     app.Config.Version,
+	data := envelope{
+		"status": "available",
+		"system_info": map[string]any{
+			"environment": app.Config.Env,
+			"version":     app.Config.Version,
+		},
 	}
 
 	err := app.writeJSON(w, data, http.StatusOK)
