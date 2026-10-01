@@ -24,17 +24,17 @@ func readIDParam(r *http.Request) (int, error) {
 }
 
 func (app *Application) writeJSON(w http.ResponseWriter, data envelope, status int) error {
-	json, err := json.Marshal(data)
+	js, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
 		return err
 	}
 
 	// add extra line for nice looking responses via curl
-	json = append(json, '\n')
+	js = append(js, '\n')
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	w.Write(json)
+	w.Write(js)
 
 	return nil
 }
