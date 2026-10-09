@@ -88,14 +88,14 @@ func TestWriteJson(t *testing.T) {
 				"field2": 200,
 			},
 			status:     http.StatusOK,
-			want:       `{"field1":"value","field2":200}`,
+			want:       "{\n\t\"field1\": \"value\",\n\t\"field2\": 200\n}",
 			wantStatus: http.StatusOK,
 		},
 		{
 			name:       "status 500",
 			data:       map[string]any{"key": "value"},
 			status:     http.StatusBadRequest,
-			want:       `{"key":"value"}`,
+			want:       "{\n\t\"key\": \"value\"\n}",
 			wantStatus: http.StatusOK,
 		},
 	}

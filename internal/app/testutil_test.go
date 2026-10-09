@@ -67,7 +67,7 @@ func assertLogError(t *testing.T, buf *bytes.Buffer, errMsg string, method strin
 func assertErrorResponse(t *testing.T, rr *httptest.ResponseRecorder, wantStatusCode int, message any) {
 	t.Helper()
 
-	wantBody, err := json.Marshal(envelope{"error": message})
+	wantBody, err := json.MarshalIndent(envelope{"error": message}, "", "\t")
 	if err != nil {
 		t.Fatalf("could not marshal wantBody: %v", err)
 	}
