@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
@@ -68,5 +69,25 @@ func TestShowMovieHandler(t *testing.T) {
 
 	if resBody.Movie.Version != m.Version {
 		t.Errorf("want version: %d; got: %d", m.Version, resBody.Movie.Version)
+	}
+
+}
+
+func TestCreateMovieHandler(t *testing.T) {
+	t.Parallel()
+
+	js := `{"title": "Titanic", "year": 1997, "runtime": 194, "genres": ["melodrama", "thriller", "drama"]}`
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/v1/movies", strings.NewReader(js))
+
+	app := newTestApplication(t)
+
+	app.createMovieHandler(rr, req)
+
+	wantBody := "{Title:Titanic Year:1997 Runtime:194 Genres:[melodrama thriller drama]}\n"
+	gotBody := rr.Body.String()
+
+	if gotBody != wantBody {
+		t.Errorf("want body: %s; got: %s", wantBody, gotBody)
 	}
 }
