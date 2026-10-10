@@ -20,6 +20,7 @@ func (app *Application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	fmt.Fprintf(w, "%+v\n", input)
