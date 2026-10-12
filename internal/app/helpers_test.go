@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
@@ -128,6 +129,81 @@ func TestWriteJson(t *testing.T) {
 				t.Errorf("want json: %q; got: %q", tt.want, gotBody)
 			}
 
+		})
+	}
+
+}
+
+func TestReadJson(t *testing.T) {
+
+	type movie struct {
+		Title string `json:"title"`
+		Year  int    `json:"year"`
+	}
+
+	cases := []struct {
+		name       string
+		body       string
+		want       movie
+		wantErrMsg string
+	}{
+		{
+			name: "valid json",
+			body: `{"title": "Moana", "year": 2016}`,
+			want: movie{Title: "Moana", Year: 2016},
+		},
+		{
+			name:       "json with non-wrapped keys",
+			body:       `{title:"Moana"}`,
+			wantErrMsg: "body contains badly-formed JSON (at character 2)",
+		},
+		{
+			name:       "truncated json",
+			body:       `{"title":"Moana"`,
+			wantErrMsg: "body contains badly-formed JSON",
+		},
+		{
+			name:       "json with stringified year",
+			body:       `{"title": "Moana", "year": "1984"}`,
+			wantErrMsg: `body contains incorrect JSON type for field "year"`,
+		},
+		{
+			name:       "empty body",
+			body:       "",
+			wantErrMsg: "body must not be empty",
+		},
+	}
+
+	app := newTestApplication(t)
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var dst movie
+
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(tc.body))
+
+			err := app.readJSON(rr, req, &dst)
+
+			if tc.wantErrMsg != "" {
+				if err == nil {
+					t.Fatalf("want error %q; got nil", tc.wantErrMsg)
+				}
+
+				if !strings.Contains(err.Error(), tc.wantErrMsg) {
+					t.Errorf("want error containing %q; got %q", tc.wantErrMsg, err.Error())
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexptected errof: %v", err)
+			}
+
+			if dst != tc.want {
+				t.Errorf("want: %v; got: %v", tc.want, dst)
+			}
 		})
 	}
 
