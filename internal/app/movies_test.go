@@ -76,7 +76,7 @@ func TestShowMovieHandler(t *testing.T) {
 func TestCreateMovieHandler(t *testing.T) {
 	t.Parallel()
 
-	js := `{"title": "Titanic", "year": 1997, "runtime": 194, "genres": ["melodrama", "thriller", "drama"]}`
+	js := `{"title": "Titanic", "year": 1997, "runtime": "194 mins", "genres": ["melodrama", "thriller", "drama"]}`
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/v1/movies", strings.NewReader(js))
 
