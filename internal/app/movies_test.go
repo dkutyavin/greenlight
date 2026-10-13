@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"greenlight.dekutyavin.net/internal/data"
@@ -76,18 +77,106 @@ func TestShowMovieHandler(t *testing.T) {
 func TestCreateMovieHandler(t *testing.T) {
 	t.Parallel()
 
-	js := `{"title": "Titanic", "year": 1997, "runtime": "194 mins", "genres": ["melodrama", "thriller", "drama"]}`
-	rr := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/v1/movies", strings.NewReader(js))
+	cases := []struct {
+		name           string
+		js             string
+		wantBody       string
+		wantStatusCode int
+	}{
+		{
+			name:           "correct request json",
+			js:             `{"title": "Titanic", "year": 1997, "runtime": "194 mins", "genres": ["melodrama", "thriller", "drama"]}`,
+			wantBody:       "{Title:Titanic Year:1997 Runtime:194 Genres:[melodrama thriller drama]}\n",
+			wantStatusCode: http.StatusOK,
+		},
+		{
+			name:           "empty title",
+			js:             `{"title": "", "year": 1997, "runtime": "194 mins", "genres": ["melodrama", "thriller", "drama"]}`,
+			wantBody:       `"title": "must be provided"`,
+			wantStatusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:           "title longer than 500 bytes",
+			js:             `{"title": "` + strings.Repeat("a", 501) + `", "year": 1997, "runtime": "194 mins", "genres": ["melodrama"]}`,
+			wantBody:       `"title": "must not be more than 500 bytes long"`,
+			wantStatusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:           "empty year",
+			js:             `{"title": "Titanic", "year": 0, "runtime": "194 mins", "genres": ["melodrama"]}`,
+			wantBody:       `"year": "must be provided"`,
+			wantStatusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:           "year too early",
+			js:             `{"title": "Titanic", "year": 1887, "runtime": "194 mins", "genres": ["melodrama"]}`,
+			wantBody:       `"year": "must be greater than 1888"`,
+			wantStatusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:           "year in the future",
+			js:             fmt.Sprintf(`{"title": "Titanic", "year": %d, "runtime": "194 mins", "genres": ["melodrama"]}`, time.Now().Year()+1),
+			wantBody:       `"year": "must not be in the future"`,
+			wantStatusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:           "empty runtime",
+			js:             `{"title": "Titanic", "year": 1997, "runtime": "0 mins", "genres": ["melodrama"]}`,
+			wantBody:       `"runtime": "must be provided"`,
+			wantStatusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:           "negative runtime",
+			js:             `{"title": "Titanic", "year": 1997, "runtime": "-194 mins", "genres": ["melodrama"]}`,
+			wantBody:       `"runtime": "must be positive integer"`,
+			wantStatusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:           "missing genres",
+			js:             `{"title": "Titanic", "year": 1997, "runtime": "194 mins"}`,
+			wantBody:       `"genres": "must be provided"`,
+			wantStatusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:           "empty genres",
+			js:             `{"title": "Titanic", "year": 1997, "runtime": "194 mins", "genres": []}`,
+			wantBody:       `"genres": "must contain at least 1 genre"`,
+			wantStatusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:           "more than 5 genres",
+			js:             `{"title": "Titanic", "year": 1997, "runtime": "194 mins", "genres": ["melodrama", "thriller", "drama", "romance", "war", "comedy"]}`,
+			wantBody:       `"genres": "must not contain more than 5 genres"`,
+			wantStatusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:           "duplicate genres",
+			js:             `{"title": "Titanic", "year": 1997, "runtime": "194 mins", "genres": ["drama", "drama"]}`,
+			wantBody:       `"genres": "must not contain duplicate genres"`,
+			wantStatusCode: http.StatusUnprocessableEntity,
+		},
+	}
 
-	app := newTestApplication(t)
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	app.createMovieHandler(rr, req)
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, "/v1/movies", strings.NewReader(tt.js))
 
-	wantBody := "{Title:Titanic Year:1997 Runtime:194 Genres:[melodrama thriller drama]}\n"
-	gotBody := rr.Body.String()
+			app := newTestApplication(t)
 
-	if gotBody != wantBody {
-		t.Errorf("want body: %s; got: %s", wantBody, gotBody)
+			app.createMovieHandler(rr, req)
+
+			gotBody := rr.Body.String()
+
+			if !strings.Contains(gotBody, tt.wantBody) {
+				t.Errorf("want body: %s; got: %s", tt.wantBody, gotBody)
+			}
+
+			if gotCode := rr.Result().StatusCode; gotCode != tt.wantStatusCode {
+				t.Errorf("want status code: %d; got status code: %d", tt.wantStatusCode, gotCode)
+			}
+		})
 	}
 }
