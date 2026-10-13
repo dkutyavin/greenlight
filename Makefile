@@ -5,6 +5,8 @@ endif
 
 .PHONY: build run test db-up db-down prepare-env
 
+DB_DSN ?= postgres://${DB_USER}:${DB_PASS}@localhost:5432/${DB_NAME}?sslmode=disable
+
 db-up:
 	docker compose up -d --wait
 
@@ -18,7 +20,7 @@ build:
 	go build -o=./bin/api ./cmd/api
 
 run:
-	go run ./cmd/api
+	GREENLIGHT_DB_DSN='${DB_DSN}' go run ./cmd/api
 
 test:
 	go test ./...

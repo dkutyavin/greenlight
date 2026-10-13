@@ -22,7 +22,7 @@ func main() {
 	var cfg config.Config
 
 	flag.IntVar(&cfg.Port, "port", 4000, "API server port")
-	flag.StringVar(&cfg.DB.DSN, "db-dsn", "postgres://greenlight:pa55word@localhost:5432/greenlight?sslmode=disable", "PostgreSQL DSN")
+	flag.StringVar(&cfg.DB.DSN, "db-dsn", os.Getenv("GREENLIGHT_DB_DSN"), "PostgreSQL DSN")
 	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
 	flag.Parse()
 	cfg.Version = version
