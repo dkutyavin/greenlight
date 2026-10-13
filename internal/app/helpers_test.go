@@ -172,6 +172,21 @@ func TestReadJson(t *testing.T) {
 			body:       "",
 			wantErrMsg: "body must not be empty",
 		},
+		{
+			name:       "body larget that 1 MB",
+			body:       fmt.Sprintf(`{"title": "%s", "year": 1984}`, strings.Repeat("a", 1024*1024+1)),
+			wantErrMsg: "body must not be larger than 1048576 bytes",
+		},
+		{
+			name:       "body with unknown field",
+			body:       `{"title": "Moana", "year": 1984, "genres": ["adventures"]}`,
+			wantErrMsg: "body contains unknown key \"genres\"",
+		},
+		{
+			name:       "body with two jsons",
+			body:       `{"title": "Moana", "year": 2016}{"title": "Moana", "year": 2016}`,
+			wantErrMsg: "body must only contain a single JSON value",
+		},
 	}
 
 	app := newTestApplication(t)
