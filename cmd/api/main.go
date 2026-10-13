@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -10,6 +12,8 @@ import (
 
 	"greenlight.dekutyavin.net/internal/app"
 	"greenlight.dekutyavin.net/internal/config"
+
+	_ "github.com/lib/pq"
 )
 
 const version = "1.0.0"
@@ -18,11 +22,21 @@ func main() {
 	var cfg config.Config
 
 	flag.IntVar(&cfg.Port, "port", 4000, "API server port")
+	flag.StringVar(&cfg.DB.DSN, "db-dsn", "postgres://greenlight:pa55word@localhost:5432/greenlight?sslmode=disable", "PostgreSQL DSN")
 	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
 	flag.Parse()
 	cfg.Version = version
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	db, err := openDB(cfg)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	logger.Info("database connection pool established")
 
 	app := app.Application{
 		Config: cfg,
@@ -39,7 +53,25 @@ func main() {
 	}
 
 	logger.Info("starting server", "addr", srv.Addr, "env", cfg.Env)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	logger.Error(err.Error())
 	os.Exit(1)
+}
+
+func openDB(cfg config.Config) (*sql.DB, error) {
+	db, err := sql.Open("postgres", cfg.DB.DSN)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = db.PingContext(ctx)
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	return db, nil
 }

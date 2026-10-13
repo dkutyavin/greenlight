@@ -4,4 +4,7 @@ type Config struct {
 	Port    int
 	Env     string
 	Version string
+	DB      struct {
+		DSN string
+	}
 }
