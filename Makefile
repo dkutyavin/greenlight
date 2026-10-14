@@ -3,7 +3,7 @@ include .env
 export
 endif
 
-.PHONY: build run test db-up db-down prepare-env
+.PHONY: build run test db-up db-down prepare-env migrate-up migrate-down
 
 DB_DSN ?= postgres://${DB_USER}:${DB_PASS}@localhost:5432/${DB_NAME}?sslmode=disable
 
@@ -24,3 +24,9 @@ run:
 
 test:
 	go test ./...
+
+migrate-up:
+	migrate -path=./migrations -database='${DB_DSN}' up
+
+migrate-down:
+	migrate -path=./migrations -database='${DB_DSN}' down
