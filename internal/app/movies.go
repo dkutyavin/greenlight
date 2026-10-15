@@ -23,7 +23,7 @@ func (app *Application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	movie := data.Movie{
+	movie := &data.Movie{
 		Title:   input.Title,
 		Year:    input.Year,
 		Runtime: input.Runtime,
@@ -32,12 +32,24 @@ func (app *Application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 
 	v := validator.New()
 
-	if data.ValidateMovie(v, &movie); !v.Valid() {
+	if data.ValidateMovie(v, movie); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	fmt.Fprintf(w, "%+v\n", input)
+	err = app.Models.Movies.Insert(movie)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/movies/%d", movie.ID))
+
+	err = app.writeJSON(w, envelope{"movie": movie}, http.StatusCreated, headers)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
 
 func (app *Application) showMovieHandler(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +68,7 @@ func (app *Application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 		Version:   1,
 	}
 
-	err = app.writeJSON(w, envelope{"movie": movie}, http.StatusOK)
+	err = app.writeJSON(w, envelope{"movie": movie}, http.StatusOK, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

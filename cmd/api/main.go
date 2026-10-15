@@ -12,6 +12,7 @@ import (
 
 	"greenlight.dekutyavin.net/internal/app"
 	"greenlight.dekutyavin.net/internal/config"
+	"greenlight.dekutyavin.net/internal/data"
 
 	_ "github.com/lib/pq"
 )
@@ -46,6 +47,7 @@ func main() {
 	app := app.Application{
 		Config: cfg,
 		Logger: logger,
+		Models: data.NewModels(db),
 	}
 
 	srv := http.Server{

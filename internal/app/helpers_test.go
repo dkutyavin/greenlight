@@ -108,7 +108,7 @@ func TestWriteJson(t *testing.T) {
 
 			rr := httptest.NewRecorder()
 
-			err := app.writeJSON(rr, tt.data, http.StatusOK)
+			err := app.writeJSON(rr, tt.data, http.StatusOK, nil)
 			if err != nil {
 				t.Fatalf("unexpected writeJSON error: %v", err)
 			}
