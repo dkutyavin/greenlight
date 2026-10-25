@@ -473,3 +473,114 @@ func TestMovieUpdateHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteMovieHandler(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name            string
+		idParam         string
+		deleteFn        func(int) error
+		wantStatus      int
+		wantMessage     string
+		wantID          int
+		wantDeleteCalls int
+	}{
+		{
+			name:            "existing movie",
+			idParam:         "1",
+			wantStatus:      http.StatusOK,
+			wantMessage:     "movie successfullly deleted",
+			wantID:          1,
+			wantDeleteCalls: 1,
+		},
+		{
+			name:            "id param is not a number",
+			idParam:         "abc",
+			wantStatus:      http.StatusNotFound,
+			wantDeleteCalls: 0,
+		},
+		{
+			name:            "id param is missing",
+			idParam:         "",
+			wantStatus:      http.StatusNotFound,
+			wantDeleteCalls: 0,
+		},
+		{
+			name:            "movie not found",
+			idParam:         "1",
+			deleteFn:        func(int) error { return data.ErrRecordNotFound },
+			wantStatus:      http.StatusNotFound,
+			wantID:          1,
+			wantDeleteCalls: 1,
+		},
+		{
+			name:            "model error",
+			idParam:         "1",
+			deleteFn:        func(int) error { return errors.New("connection reset by peer") },
+			wantStatus:      http.StatusInternalServerError,
+			wantID:          1,
+			wantDeleteCalls: 1,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			deleteCalls := 0
+
+			model := newTestMovieModel(t)
+			model.deleteFn = func(id int) error {
+				deleteCalls++
+
+				if tt.wantID != 0 && id != tt.wantID {
+					t.Errorf("want model called with id: %d; got: %d", tt.wantID, id)
+				}
+
+				if tt.deleteFn != nil {
+					return tt.deleteFn(id)
+				}
+
+				return nil
+			}
+
+			app := newTestApplication(t)
+			app.Models.Movies = model
+
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodDelete, "/v1/movies/"+tt.idParam, nil)
+
+			if tt.idParam != "" {
+				params := httprouter.Params{{Key: "id", Value: tt.idParam}}
+				req = req.WithContext(context.WithValue(req.Context(), httprouter.ParamsKey, params))
+			}
+
+			app.deleteMovieHandler(rr, req)
+
+			if got := rr.Result().StatusCode; got != tt.wantStatus {
+				t.Fatalf("want status: %d; got: %d; body: %s", tt.wantStatus, got, rr.Body.String())
+			}
+
+			if deleteCalls != tt.wantDeleteCalls {
+				t.Errorf("want model Delete calls: %d; got: %d", tt.wantDeleteCalls, deleteCalls)
+			}
+
+			if tt.wantMessage == "" {
+				return
+			}
+
+			var resBody struct {
+				Message string `json:"message"`
+			}
+
+			if err := json.Unmarshal(rr.Body.Bytes(), &resBody); err != nil {
+				t.Fatalf("could not unmarshal body: %v", err)
+			}
+
+			if resBody.Message != tt.wantMessage {
+				t.Errorf("want message: %q; got message: %q", tt.wantMessage, resBody.Message)
+			}
+		})
+	}
+}
