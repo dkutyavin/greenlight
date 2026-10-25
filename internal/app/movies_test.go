@@ -276,3 +276,200 @@ func TestCreateMovieHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestMovieUpdateHandler(t *testing.T) {
+	t.Parallel()
+
+	existing := data.Movie{
+		ID:      1,
+		Title:   "Casablanca",
+		Year:    1942,
+		Runtime: 102,
+		Genres:  []string{"drama", "romance", "war"},
+		Version: 1,
+	}
+
+	cases := []struct {
+		name            string
+		idParam         string
+		js              string
+		getFn           func(int) (*data.Movie, error)
+		updateFn        func(*data.Movie) error
+		wantStatus      int
+		wantMovie       *data.Movie
+		wantErrors      map[string]string
+		wantGetCalls    int
+		wantUpdateCalls int
+	}{
+		{
+			name:    "existing json updates if correct body supplied",
+			idParam: "1",
+			js:      `{"title": "Casablanca", "year": 1942, "runtime": "102 mins", "genres": ["drama", "romance"]}`,
+			updateFn: func(m *data.Movie) error {
+				// the model rewrites the record; 7 comes neither from the request nor from Get
+				m.Version = 7
+
+				return nil
+			},
+			wantStatus: http.StatusOK,
+			wantMovie: &data.Movie{
+				ID:      1,
+				Title:   "Casablanca",
+				Year:    1942,
+				Runtime: 102,
+				Genres:  []string{"drama", "romance"},
+				Version: 7,
+			},
+			wantGetCalls:    1,
+			wantUpdateCalls: 1,
+		},
+		{
+			name:            "id param is not a number",
+			idParam:         "abc",
+			js:              `{}`,
+			wantStatus:      http.StatusNotFound,
+			wantGetCalls:    0,
+			wantUpdateCalls: 0,
+		},
+		{
+			name:            "id param is missing",
+			idParam:         "",
+			js:              `{}`,
+			wantStatus:      http.StatusNotFound,
+			wantGetCalls:    0,
+			wantUpdateCalls: 0,
+		},
+		{
+			name:            "model get error",
+			idParam:         "1",
+			js:              `{}`,
+			getFn:           func(int) (*data.Movie, error) { return nil, errors.New("connection reset by peer") },
+			wantStatus:      http.StatusInternalServerError,
+			wantGetCalls:    1,
+			wantUpdateCalls: 0,
+		},
+		{
+			name:            "malformed json",
+			idParam:         "1",
+			js:              `{"title": `,
+			wantStatus:      http.StatusBadRequest,
+			wantGetCalls:    1,
+			wantUpdateCalls: 0,
+		},
+		{
+			name:       "invalid fields",
+			idParam:    "1",
+			js:         `{"title": "", "year": 0, "runtime": "0 mins", "genres": []}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantErrors: map[string]string{
+				"title":   "must be provided",
+				"year":    "must be provided",
+				"runtime": "must be provided",
+				"genres":  "must contain at least 1 genre",
+			},
+			wantGetCalls:    1,
+			wantUpdateCalls: 0,
+		},
+		{
+			name:            "model update error",
+			idParam:         "1",
+			js:              `{"title": "Casablanca", "year": 1942, "runtime": "102 mins", "genres": ["drama"]}`,
+			updateFn:        func(*data.Movie) error { return errors.New("connection reset by peer") },
+			wantStatus:      http.StatusInternalServerError,
+			wantGetCalls:    1,
+			wantUpdateCalls: 1,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			getCalls := 0
+			updateCalls := 0
+
+			model := newTestMovieModel(t)
+			model.getFn = func(id int) (*data.Movie, error) {
+				getCalls++
+
+				if tt.getFn != nil {
+					return tt.getFn(id)
+				}
+
+				if id == existing.ID {
+					// return a copy so handler mutations cannot alter the expected value
+					found := existing
+					found.Genres = slices.Clone(existing.Genres)
+
+					return &found, nil
+				}
+
+				return nil, data.ErrRecordNotFound
+			}
+			model.updateFn = func(m *data.Movie) error {
+				updateCalls++
+
+				if tt.updateFn != nil {
+					return tt.updateFn(m)
+				}
+
+				return nil
+			}
+
+			app := newTestApplication(t)
+			app.Models.Movies = model
+
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPut, "/v1/movies/"+tt.idParam, strings.NewReader(tt.js))
+
+			if tt.idParam != "" {
+				params := httprouter.Params{{Key: "id", Value: tt.idParam}}
+				req = req.WithContext(context.WithValue(req.Context(), httprouter.ParamsKey, params))
+			}
+
+			app.updateMovieHandler(rr, req)
+
+			if gotStatus := rr.Result().StatusCode; gotStatus != tt.wantStatus {
+				t.Fatalf("want status code: %d; got: %d; body: %s", tt.wantStatus, gotStatus, rr.Body.String())
+			}
+
+			if getCalls != tt.wantGetCalls {
+				t.Errorf("want model Get calls: %d; got: %d", tt.wantGetCalls, getCalls)
+			}
+
+			if updateCalls != tt.wantUpdateCalls {
+				t.Errorf("want model Update calls: %d; got: %d", tt.wantUpdateCalls, updateCalls)
+			}
+
+			switch {
+			case tt.wantMovie != nil:
+				var resBody struct {
+					Movie data.Movie `json:"movie"`
+				}
+
+				err := json.Unmarshal(rr.Body.Bytes(), &resBody)
+				if err != nil {
+					t.Fatalf("could not unmarshal body: %v", err)
+				}
+
+				if !reflect.DeepEqual(resBody.Movie, *tt.wantMovie) {
+					t.Errorf("want movie: %+v; got movie: %+v", *tt.wantMovie, resBody.Movie)
+				}
+
+			case tt.wantErrors != nil:
+				var resBody struct {
+					Error map[string]string `json:"error"`
+				}
+
+				err := json.Unmarshal(rr.Body.Bytes(), &resBody)
+				if err != nil {
+					t.Fatalf("could not unmarshal body: %v", err)
+				}
+
+				if !maps.Equal(resBody.Error, tt.wantErrors) {
+					t.Errorf("want errors: %v; got errors: %v", tt.wantErrors, resBody.Error)
+				}
+			}
+		})
+	}
+}
