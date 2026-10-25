@@ -47,7 +47,7 @@ func main() {
 	app := app.Application{
 		Config: cfg,
 		Logger: logger,
-		Models: data.NewModels(db),
+		Models: app.Models{Movies: data.NewMoviesModel(db)},
 	}
 
 	srv := http.Server{

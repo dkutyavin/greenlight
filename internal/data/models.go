@@ -9,12 +9,6 @@ var (
 	ErrRecordNotFound = errors.New("record not found")
 )
 
-type Models struct {
-	Movies MovieModel
-}
-
-func NewModels(db *sql.DB) Models {
-	return Models{
-		Movies: MovieModel{DB: db},
-	}
+func NewMoviesModel(db *sql.DB) *MovieModel {
+	return &MovieModel{DB: db}
 }

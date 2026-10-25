@@ -3,11 +3,11 @@ package app
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -16,62 +16,115 @@ import (
 )
 
 func TestShowMovieHandler(t *testing.T) {
-	t.Skip("TODO: add db mock")
 	t.Parallel()
 
-	m := data.Movie{
+	existing := data.Movie{
 		ID:      1,
 		Title:   "Casablanca",
+		Year:    1942,
 		Runtime: 102,
 		Genres:  []string{"drama", "romance", "war"},
 		Version: 1,
 	}
 
-	rr := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/movies/%d", m.ID), nil)
-	params := httprouter.Params{{Key: "id", Value: strconv.Itoa(m.ID)}}
-	req = req.WithContext(context.WithValue(req.Context(), httprouter.ParamsKey, params))
-
-	app := newTestApplication(t)
-
-	app.showMovieHandler(rr, req)
-
-	var resBody struct {
-		Movie struct {
-			ID      int      `json:"id"`
-			Title   string   `json:"title"`
-			Runtime string   `json:"runtime"`
-			Genres  []string `json:"genres"`
-			Version int      `json:"version"`
-		} `json:"movie"`
+	cases := []struct {
+		name           string
+		idParam        string
+		wantMovie      bool
+		getErr         error
+		wantStatus     int
+		wantModelCalls int
+	}{
+		{
+			name:           "existing movie",
+			idParam:        "1",
+			wantMovie:      true,
+			wantStatus:     http.StatusOK,
+			wantModelCalls: 1,
+		},
+		{
+			name:           "missing movie",
+			idParam:        "1",
+			getErr:         data.ErrRecordNotFound,
+			wantStatus:     http.StatusNotFound,
+			wantModelCalls: 1,
+		},
+		{
+			name:           "model error",
+			idParam:        "1",
+			getErr:         errors.New("connection reset by peer"),
+			wantStatus:     http.StatusInternalServerError,
+			wantModelCalls: 1,
+		},
+		{
+			name:           "invalid id",
+			idParam:        "abc",
+			wantStatus:     http.StatusNotFound,
+			wantModelCalls: 0,
+		},
 	}
 
-	err := json.Unmarshal(rr.Body.Bytes(), &resBody)
-	if err != nil {
-		t.Fatalf("could not unmarshal body: %v", err)
-	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	if resBody.Movie.ID != m.ID {
-		t.Errorf("want movie id: %d; got: %d", m.ID, resBody.Movie.ID)
-	}
+			modelCalls := 0
 
-	if resBody.Movie.Title != m.Title {
-		t.Errorf("want movie title: %q; got: %q", m.Title, resBody.Movie.Title)
-	}
+			model := newTestMovieModel(t)
+			model.getFn = func(gotID int) (*data.Movie, error) {
+				modelCalls++
 
-	wantRuntime := fmt.Sprintf("%d mins", m.Runtime)
-	if resBody.Movie.Runtime != wantRuntime {
-		t.Errorf("want runtime: %q; got: %q", wantRuntime, resBody.Movie.Runtime)
-	}
+				if gotID != existing.ID {
+					t.Errorf("want model called with id: %d; got: %d", existing.ID, gotID)
+				}
 
-	if !slices.Equal(resBody.Movie.Genres, m.Genres) {
-		t.Errorf("want movie genres: %v; got: %v", m.Genres, resBody.Movie.Genres)
-	}
+				if !tt.wantMovie {
+					return nil, tt.getErr
+				}
 
-	if resBody.Movie.Version != m.Version {
-		t.Errorf("want version: %d; got: %d", m.Version, resBody.Movie.Version)
-	}
+				// return a copy so handler mutations cannot alter the expected value
+				found := existing
+				found.Genres = slices.Clone(existing.Genres)
 
+				return &found, nil
+			}
+
+			app := newTestApplication(t)
+			app.Models.Movies = model
+
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodGet, "/v1/movies/"+tt.idParam, nil)
+			params := httprouter.Params{{Key: "id", Value: tt.idParam}}
+			req = req.WithContext(context.WithValue(req.Context(), httprouter.ParamsKey, params))
+
+			app.showMovieHandler(rr, req)
+
+			if got := rr.Result().StatusCode; got != tt.wantStatus {
+				t.Fatalf("want status: %d; got: %d; body: %s", tt.wantStatus, got, rr.Body.String())
+			}
+
+			if modelCalls != tt.wantModelCalls {
+				t.Errorf("want model calls: %d; got: %d", tt.wantModelCalls, modelCalls)
+			}
+
+			if tt.wantStatus != http.StatusOK {
+				return
+			}
+
+			var resBody struct {
+				Movie data.Movie `json:"movie"`
+			}
+
+			err := json.Unmarshal(rr.Body.Bytes(), &resBody)
+			if err != nil {
+				t.Fatalf("could not unmarshal body: %v", err)
+			}
+
+			if !reflect.DeepEqual(resBody.Movie, existing) {
+				t.Errorf("want movie: %+v; got movie: %+v", existing, resBody.Movie)
+			}
+		})
+	}
 }
 
 func TestCreateMovieHandler(t *testing.T) {

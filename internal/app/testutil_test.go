@@ -8,7 +8,33 @@ import (
 	"testing"
 
 	"greenlight.dekutyavin.net/internal/config"
+	"greenlight.dekutyavin.net/internal/data"
 )
+
+type testMovieModel struct {
+	insertFn func(*data.Movie) error
+	getFn    func(int) (*data.Movie, error)
+	updateFn func(*data.Movie) error
+	deleteFn func(int) error
+}
+
+func (m *testMovieModel) Insert(mov *data.Movie) error { return m.insertFn(mov) }
+
+func (m *testMovieModel) Get(id int) (*data.Movie, error) { return m.getFn(id) }
+
+func (m *testMovieModel) Update(mov *data.Movie) error { return m.updateFn(mov) }
+
+func (m *testMovieModel) Delete(id int) error { return m.deleteFn(id) }
+
+func newTestMovieModel(t *testing.T) *testMovieModel {
+	t.Helper()
+	return &testMovieModel{
+		insertFn: func(m *data.Movie) error { return nil },
+		getFn:    func(i int) (*data.Movie, error) { return nil, data.ErrRecordNotFound },
+		updateFn: func(m *data.Movie) error { return nil },
+		deleteFn: func(i int) error { return nil },
+	}
+}
 
 func newTestApplication(t *testing.T) *Application {
 	t.Helper()
@@ -18,6 +44,7 @@ func newTestApplication(t *testing.T) *Application {
 			Env: "testing",
 		},
 		Logger: slog.New(slog.DiscardHandler),
+		Models: Models{Movies: newTestMovieModel(t)},
 	}
 }
 
@@ -27,6 +54,7 @@ func newTestApplicationWithLogs(t *testing.T) (*Application, *bytes.Buffer) {
 	app := &Application{
 		Config: config.Config{Env: "testing"},
 		Logger: slog.New(slog.NewJSONHandler(buf, &slog.HandlerOptions{Level: slog.LevelDebug})),
+		Models: Models{Movies: newTestMovieModel(t)},
 	}
 
 	return app, buf
