@@ -371,6 +371,27 @@ func TestMovieUpdateHandler(t *testing.T) {
 			wantUpdateCalls: 0,
 		},
 		{
+			name:    "partial updates",
+			idParam: "1",
+			js:      `{"year": 1943}`,
+			updateFn: func(m *data.Movie) error {
+				m.Version++
+
+				return nil
+			},
+			wantStatus: http.StatusOK,
+			wantMovie: &data.Movie{
+				ID:      1,
+				Title:   "Casablanca",
+				Year:    1943,
+				Runtime: 102,
+				Genres:  []string{"drama", "romance", "war"},
+				Version: 2,
+			},
+			wantUpdateCalls: 1,
+			wantGetCalls:    1,
+		},
+		{
 			name:            "model update error",
 			idParam:         "1",
 			js:              `{"title": "Casablanca", "year": 1942, "runtime": "102 mins", "genres": ["drama"]}`,
