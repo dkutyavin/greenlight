@@ -49,7 +49,10 @@ func main() {
 	app := app.Application{
 		Config: cfg,
 		Logger: logger,
-		Models: app.Models{Movies: data.NewMoviesModel(db)},
+		Models: app.Models{
+			Movies: data.NewMoviesModel(db),
+			Users:  data.NewUserModel(db),
+		},
 	}
 
 	err = app.Serve()

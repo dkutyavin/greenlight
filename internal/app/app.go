@@ -21,6 +21,13 @@ type MovieModel interface {
 	GetAll(string, []string, data.Filters) ([]*data.Movie, data.Metadata, error)
 }
 
+type UserModel interface {
+	Insert(*data.User) error
+	GetByEmail(string) (*data.User, error)
+	Update(*data.User) error
+}
+
 type Models struct {
 	Movies MovieModel
+	Users  UserModel
 }
