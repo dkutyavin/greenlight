@@ -6,11 +6,13 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"strconv"
 	"time"
 
 	"greenlight.dekutyavin.net/internal/app"
 	"greenlight.dekutyavin.net/internal/config"
 	"greenlight.dekutyavin.net/internal/data"
+	"greenlight.dekutyavin.net/internal/mailer"
 
 	_ "github.com/lib/pq"
 )
@@ -32,6 +34,12 @@ func main() {
 	flag.IntVar(&cfg.Limiter.Burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.Limiter.Enabled, "limiter-enabled", true, "Enable rate limiter")
 
+	flag.StringVar(&cfg.SMTP.Host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.SMTP.Port, "smtp-port", envInt("GREENLIGHT_SMTP_PORT", 25), "SMTP port")
+	flag.StringVar(&cfg.SMTP.Username, "smtp-username", os.Getenv("GREENLIGHT_SMTP_USERNAME"), "SMTP username")
+	flag.StringVar(&cfg.SMTP.Password, "smtp-password", os.Getenv("GREENLIGHT_SMTP_PASSWORD"), "SMTP password")
+	flag.StringVar(&cfg.SMTP.Sender, "smtp-sender", "Greenlight <no-reply@greenlight.dekutyavin.net>", "SMTP sender")
+
 	flag.Parse()
 	cfg.Version = version
 
@@ -46,6 +54,18 @@ func main() {
 
 	logger.Info("database connection pool established")
 
+	mailer, err := mailer.New(
+		cfg.SMTP.Host,
+		cfg.SMTP.Port,
+		cfg.SMTP.Username,
+		cfg.SMTP.Password,
+		cfg.SMTP.Sender,
+	)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
 	app := app.Application{
 		Config: cfg,
 		Logger: logger,
@@ -53,6 +73,7 @@ func main() {
 			Movies: data.NewMoviesModel(db),
 			Users:  data.NewUserModel(db),
 		},
+		Mailer: mailer,
 	}
 
 	err = app.Serve()
@@ -82,4 +103,20 @@ func openDB(cfg config.Config) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+// envInt reads the environment variable named key as an integer, falling back
+// to fallback when the variable is unset or not a valid integer.
+func envInt(key string, fallback int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+
+	n, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+
+	return n
 }

@@ -17,4 +17,11 @@ type Config struct {
 		Burst   int
 		Enabled bool
 	}
+	SMTP struct {
+		Host     string
+		Port     int
+		Username string
+		Password string
+		Sender   string
+	}
 }

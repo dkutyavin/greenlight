@@ -20,7 +20,7 @@ build:
 	go build -o=./bin/api ./cmd/api
 
 run:
-	GREENLIGHT_DB_DSN='${DB_DSN}' go run ./cmd/api
+	GREENLIGHT_DB_DSN='${DB_DSN}' GREENLIGHT_SMTP_PORT='${SMTP_PORT}' GREENLIGHT_SMTP_USERNAME='${SMTP_USERNAME}' GREENLIGHT_SMTP_PASSWORD='${SMTP_PASSWORD}' go run ./cmd/api
 
 test:
 	go test ./...

@@ -5,12 +5,14 @@ import (
 
 	"greenlight.dekutyavin.net/internal/config"
 	"greenlight.dekutyavin.net/internal/data"
+	"greenlight.dekutyavin.net/internal/mailer"
 )
 
 type Application struct {
 	Config config.Config
 	Logger *slog.Logger
 	Models Models
+	Mailer *mailer.Mailer
 }
 
 type MovieModel interface {
