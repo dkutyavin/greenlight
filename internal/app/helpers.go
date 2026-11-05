@@ -139,3 +139,16 @@ func (app *Application) readInt(qs url.Values, key string, defaultValue int, v *
 
 	return i
 }
+
+func (app *Application) background(fn func()) {
+	go func() {
+		defer func() {
+			pv := recover()
+			if pv != nil {
+				app.Logger.Error(fmt.Sprintf("%v", pv))
+			}
+		}()
+
+		fn()
+	}()
+}
