@@ -53,8 +53,10 @@ func main() {
 	}
 
 	err = app.Serve()
-	logger.Error(err.Error())
-	os.Exit(1)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
 }
 
 func openDB(cfg config.Config) (*sql.DB, error) {
