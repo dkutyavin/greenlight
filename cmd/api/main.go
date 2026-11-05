@@ -4,9 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"time"
 
@@ -54,17 +52,7 @@ func main() {
 		Models: app.Models{Movies: data.NewMoviesModel(db)},
 	}
 
-	srv := http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.Port),
-		Handler:      app.Routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
-	}
-
-	logger.Info("starting server", "addr", srv.Addr, "env", cfg.Env)
-	err = srv.ListenAndServe()
+	err = app.Serve()
 	logger.Error(err.Error())
 	os.Exit(1)
 }
