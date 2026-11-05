@@ -2,6 +2,7 @@ package app
 
 import (
 	"log/slog"
+	"sync"
 
 	"greenlight.dekutyavin.net/internal/config"
 	"greenlight.dekutyavin.net/internal/data"
@@ -13,6 +14,7 @@ type Application struct {
 	Logger *slog.Logger
 	Models Models
 	Mailer *mailer.Mailer
+	WG     sync.WaitGroup
 }
 
 type MovieModel interface {
