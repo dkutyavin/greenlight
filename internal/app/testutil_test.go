@@ -16,6 +16,7 @@ type testMovieModel struct {
 	getFn    func(int) (*data.Movie, error)
 	updateFn func(*data.Movie) error
 	deleteFn func(int) error
+	getAllFn func(string, []string, data.Filters) ([]*data.Movie, data.Metadata, error)
 }
 
 func (m *testMovieModel) Insert(mov *data.Movie) error { return m.insertFn(mov) }
@@ -26,6 +27,10 @@ func (m *testMovieModel) Update(mov *data.Movie) error { return m.updateFn(mov) 
 
 func (m *testMovieModel) Delete(id int) error { return m.deleteFn(id) }
 
+func (m *testMovieModel) GetAll(title string, genres []string, filters data.Filters) ([]*data.Movie, data.Metadata, error) {
+	return m.getAllFn(title, genres, filters)
+}
+
 func newTestMovieModel(t *testing.T) *testMovieModel {
 	t.Helper()
 	return &testMovieModel{
@@ -33,6 +38,9 @@ func newTestMovieModel(t *testing.T) *testMovieModel {
 		getFn:    func(i int) (*data.Movie, error) { return nil, data.ErrRecordNotFound },
 		updateFn: func(m *data.Movie) error { return nil },
 		deleteFn: func(i int) error { return nil },
+		getAllFn: func(s1 string, s2 []string, f data.Filters) ([]*data.Movie, data.Metadata, error) {
+			return []*data.Movie{}, data.Metadata{}, nil
+		},
 	}
 }
 

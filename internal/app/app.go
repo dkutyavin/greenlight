@@ -18,6 +18,7 @@ type MovieModel interface {
 	Get(int) (*data.Movie, error)
 	Update(*data.Movie) error
 	Delete(int) error
+	GetAll(string, []string, data.Filters) ([]*data.Movie, data.Metadata, error)
 }
 
 type Models struct {
