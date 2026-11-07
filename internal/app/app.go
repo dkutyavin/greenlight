@@ -28,10 +28,13 @@ type MovieModel interface {
 
 type UserModel interface {
 	Insert(*data.User) error
+	GetForToken(string, string) (*data.User, error)
+	Update(*data.User) error
 }
 
 type TokenModel interface {
 	New(int, time.Duration, string) (*data.Token, error)
+	DeleteAllForUser(string, int) error
 }
 
 type Models struct {
