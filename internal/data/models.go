@@ -17,3 +17,7 @@ func NewMoviesModel(db *sql.DB) *MovieModel {
 func NewUserModel(db *sql.DB) *UserModel {
 	return &UserModel{DB: db}
 }
+
+func NewTokensModel(db *sql.DB) *TokenModel {
+	return &TokenModel{DB: db}
+}

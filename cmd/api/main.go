@@ -72,6 +72,7 @@ func main() {
 		Models: app.Models{
 			Movies: data.NewMoviesModel(db),
 			Users:  data.NewUserModel(db),
+			Tokens: data.NewTokensModel(db),
 		},
 		Mailer: mailer,
 	}
