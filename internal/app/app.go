@@ -30,6 +30,7 @@ type UserModel interface {
 	Insert(*data.User) error
 	GetForToken(string, string) (*data.User, error)
 	Update(*data.User) error
+	GetByEmail(string) (*data.User, error)
 }
 
 type TokenModel interface {
