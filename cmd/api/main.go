@@ -43,7 +43,15 @@ func main() {
 	flag.Parse()
 	cfg.Version = version
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	level := slog.LevelInfo
+
+	if cfg.Env == "development" {
+		level = slog.LevelDebug
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: level,
+	}))
 
 	db, err := openDB(cfg)
 	if err != nil {

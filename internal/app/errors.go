@@ -61,5 +61,12 @@ func (app *Application) rateLimitExceedResponse(w http.ResponseWriter, r *http.R
 
 func (app *Application) invalidCredentialsResponse(w http.ResponseWriter, r *http.Request) {
 	message := "invalid credentials"
-	app.errorResponse(w, r, http.StatusForbidden, message)
+	app.errorResponse(w, r, http.StatusUnauthorized, message)
+}
+
+func (app *Application) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("WWW-Authenticate", "Bearer")
+
+	message := "invalid or missing authentication token"
+	app.errorResponse(w, r, http.StatusUnauthorized, message)
 }

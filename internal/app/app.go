@@ -28,7 +28,7 @@ type MovieModel interface {
 
 type UserModel interface {
 	Insert(*data.User) error
-	GetForToken(string, string) (*data.User, error)
+	GetForToken(scope, token string) (*data.User, error)
 	Update(*data.User) error
 	GetByEmail(string) (*data.User, error)
 }
